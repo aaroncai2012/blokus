@@ -427,7 +427,9 @@ Tile* Blokus::find_tile(TileID id) {
       return std::get<1>(_tileptrs.at(i));
   }
   std::cerr << "Tile " << id << " does not exist" << std::endl;
-
+  // return empty *Tile
+  Tile emptytile = Tile(0);
+  return &emptytile;
 }
 
 void Blokus::create_piece() {
@@ -493,7 +495,9 @@ void Blokus::create_piece() {
 }
 
 void Blokus::reset() {
-
+  set_size(0);
+  while (!_tileptrs.empty())
+    _tileptrs.pop_back();
 }
 
 void Blokus::show_tiles() const {
@@ -530,19 +534,37 @@ void Blokus::show_board() const {
 }
 
 void Blokus::play_tile(TileID id, int x, int y) {
+    // find the *Tile that relates to the TileID
+  Tile* t = find_tile(id);
   // check if the tile can be placed
   // check if it will be out of bounds
-  if ((x + find_tile(id).size()) > _boardsize) {
+  if ((x + t->size()) > _boardsize) {
     tile_placing_error_message(id);
     return;
   }
-  if ((y + find_tile(id).size()) > _boardsize) {
+  if ((y + t->size()) > _boardsize) {
     tile_placing_error_message(id);
     return;
   }
+
+  // check if it overlaps with any board spaces
+  for (auto tu : _board) {
+    if (t->is_filled(std::get<0>(tu) - x, std::get<1>(tu) - y)) {
+      tile_placing_error_message(id);
+      return;
+    }
+  }
+  // now tile placement should be valid
+  for (int i = 0; i < t->size(); ++i) {
+    for (int j = 0; j < t->size(); ++j) {
+      if (t->is_filled(x, y))
+        _board.push_back(std::make_tuple(x + i, y + j));
+    }
+  }
+  tile_placed_message(id);
 }
 
-void Blokus::set_size(int) {
+void Blokus::set_size(int size) {
 
 }
 
